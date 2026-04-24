@@ -1,0 +1,230 @@
+// ─── Prisma Schema — Emotion-Aware Support Companion ─────────────────────────
+//
+// Forward-engineered from the relational database mapping in the project proposal.
+// All 10 persistent entity objects are represented as models here.
+// Each model maps to a table with PKs, FKs, and constraints as specified.
+//
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── UserProfile ───────────────────────────────────────────────────────────────
+// Represents an individual or pseudonymous user.
+// Proposal entity: UserProfile
+model UserProfile {
+  userId          Int      @id @default(autoincrement()) @map("user_id")
+  identifier      String   @unique              // pseudonymous token, no PII required
+  locale          String   @default("en-US")
+  createdAt       DateTime @default(now())      @map("created_at")
+  updatedAt       DateTime @updatedAt           @map("updated_at")
+
+  // Relations
+  privacySettings  PrivacySettings?
+  sessions         ConversationSession[]
+  consentRecords   ConsentRecord[]
+  auditActions     AuditLogEntry[]
+
+  @@map("user_profiles")
+}
+
+// ── ConversationSession ───────────────────────────────────────────────────────
+// Represents a single interaction between a UserProfile and the companion.
+// Proposal entity: ConversationSession
+model ConversationSession {
+  sessionId   Int           @id @default(autoincrement()) @map("session_id")
+  userId      Int           @map("user_id")
+  startTime   DateTime      @default(now())               @map("start_time")
+  endTime     DateTime?                                   @map("end_time")
+  status      SessionStatus @default(OPEN)
+  summary     String?
+
+  // Relations
+  user         UserProfile    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  messages     Message[]
+  feedbackEntry FeedbackEntry?
+  crisisFlags  CrisisFlag[]
+
+  @@map("conversation_sessions")
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
+}
+
+// ── Message ───────────────────────────────────────────────────────────────────
+// Represents a single text exchange in a ConversationSession.
+// Proposal entity: Message
+model Message {
+  messageId   Int        @id @default(autoincrement()) @map("message_id")
+  sessionId   Int        @map("session_id")
+  senderType  SenderType
+  content     String
+  timestamp   DateTime   @default(now())
+
+  // Relations
+  session       ConversationSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  emotionRecord EmotionRecord?
+
+  @@map("messages")
+}
+
+enum SenderType {
+  USER
+  SYSTEM
+}
+
+// ── EmotionRecord ─────────────────────────────────────────────────────────────
+// Represents the interpreted emotional state of a Message.
+// Proposal entity: EmotionRecord
+model EmotionRecord {
+  emotionId       Int          @id @default(autoincrement()) @map("emotion_id")
+  messageId       Int          @unique                       @map("message_id")
+  emotionLabel    EmotionLabel @map("emotion_label")
+  confidenceScore Float        @map("confidence_score")     // 0.0 – 1.0
+  riskLevel       RiskLevel    @default(LOW)                @map("risk_level")
+  createdAt       DateTime     @default(now())              @map("created_at")
+
+  // Relations
+  message     Message      @relation(fields: [messageId], references: [messageId], onDelete: Cascade)
+  crisisFlags CrisisFlag[]
+
+  @@map("emotion_records")
+}
+
+enum EmotionLabel {
+  happy
+  sad
+  anxious
+  angry
+  neutral
+  fearful
+  disgusted
+  surprised
+  unknown
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// ── ConsentRecord ─────────────────────────────────────────────────────────────
+// Represents the User's consent decision.
+// Proposal entity: ConsentRecord
+model ConsentRecord {
+  consentId      Int       @id @default(autoincrement()) @map("consent_id")
+  userId         Int       @map("user_id")
+  consentVersion String    @map("consent_version")
+  givenAt        DateTime  @default(now())               @map("given_at")
+  withdrawnAt    DateTime?                               @map("withdrawn_at")
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("consent_records")
+}
+
+// ── PrivacySettings ───────────────────────────────────────────────────────────
+// Represents the User's data retention and anonymity choices.
+// Proposal entity: PrivacySettings
+model PrivacySettings {
+  privacySettingsId Int      @id @default(autoincrement()) @map("privacy_settings_id")
+  userId            Int      @unique                        @map("user_id")
+  storeHistory      Boolean  @default(true)                @map("store_history")
+  retentionDays     Int      @default(90)                  @map("retention_days")
+  anonymiseLogs     Boolean  @default(false)               @map("anonymise_logs")
+  updatedAt         DateTime @updatedAt                    @map("updated_at")
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("privacy_settings")
+}
+
+// ── FeedbackEntry ─────────────────────────────────────────────────────────────
+// Represents the User's evaluation of a ConversationSession.
+// Proposal entity: FeedbackEntry
+model FeedbackEntry {
+  feedbackId      Int      @id @default(autoincrement()) @map("feedback_id")
+  sessionId       Int      @unique                       @map("session_id")
+  usabilityRating Int      @map("usability_rating")     // Likert 1-5
+  trustRating     Int      @map("trust_rating")          // Likert 1-5
+  empathyRating   Int      @map("empathy_rating")        // Likert 1-5
+  comment         String?
+  submittedAt     DateTime @default(now())               @map("submitted_at")
+
+  // Relations
+  session ConversationSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@map("feedback_entries")
+}
+
+// ── CrisisFlag ────────────────────────────────────────────────────────────────
+// Represents an indication that a Message contains potential crisis content.
+// Proposal entity: CrisisFlag
+model CrisisFlag {
+  flagId        Int           @id @default(autoincrement()) @map("flag_id")
+  emotionId     Int           @map("emotion_id")
+  sessionId     Int           @map("session_id")
+  crisisCueType CrisisCueType @map("crisis_cue_type")
+  detectedAt    DateTime      @default(now())               @map("detected_at")
+  reviewed      Boolean       @default(false)
+  resolved      Boolean       @default(false)
+
+  // Relations
+  emotionRecord EmotionRecord       @relation(fields: [emotionId], references: [emotionId], onDelete: Cascade)
+  session       ConversationSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@map("crisis_flags")
+}
+
+enum CrisisCueType {
+  SELF_HARM
+  HARM_TO_OTHERS
+  SEVERE_DISTRESS
+  SUICIDAL_IDEATION
+  OTHER
+}
+
+// ── AuditLogEntry ─────────────────────────────────────────────────────────────
+// System-wide audit trail for privacy and safety compliance.
+// Proposal entity: AuditLogEntry
+model AuditLogEntry {
+  logId        Int      @id @default(autoincrement()) @map("log_id")
+  action       String
+  targetEntity String   @map("target_entity")
+  targetId     Int      @map("target_id")
+  performedBy  Int?     @map("performed_by")         // null = system action
+  performedAt  DateTime @default(now())              @map("performed_at")
+  details      String?
+
+  // Relations
+  user UserProfile? @relation(fields: [performedBy], references: [userId], onDelete: SetNull)
+
+  @@map("audit_log_entries")
+}
+
+// ── RetentionPolicy ───────────────────────────────────────────────────────────
+// Policy-driven data retention (supports UC07 privacy tactic).
+// Proposal entity: RetentionPolicy
+model RetentionPolicy {
+  policyId          Int      @id @default(autoincrement()) @map("policy_id")
+  name              String   @unique
+  retentionDays     Int      @map("retention_days")
+  anonymiseOnExpiry Boolean  @default(false)               @map("anonymise_on_expiry")
+  deleteOnExpiry    Boolean  @default(true)                @map("delete_on_expiry")
+  appliesTo         String   @map("applies_to")            // entity name
+  createdAt         DateTime @default(now())               @map("created_at")
+  updatedAt         DateTime @updatedAt                    @map("updated_at")
+
+  @@map("retention_policies")
+}

@@ -1,0 +1,25 @@
+{
+  "name": "emotion-aware-support-companion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Emotion-Aware Support Companion — CISC 699 Capstone Project",
+  "workspaces": [
+    "packages/frontend",
+    "packages/backend",
+    "packages/tests"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=packages/backend",
+    "dev:frontend": "npm run dev --workspace=packages/frontend",
+    "build:backend": "npm run build --workspace=packages/backend",
+    "build:frontend": "npm run build --workspace=packages/frontend",
+    "test:acceptance": "npm run test --workspace=packages/tests",
+    "db:migrate": "npm run db:migrate --workspace=packages/backend",
+    "db:seed": "npm run db:seed --workspace=packages/backend",
+    "db:studio": "npm run db:studio --workspace=packages/backend"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

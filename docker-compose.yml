@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  # ─── Development Database ───────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: easc_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: easc_user
+      POSTGRES_PASSWORD: easc_password
+      POSTGRES_DB: easc_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - easc_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easc_user -d easc_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Test Database ──────────────────────────────────────────────────────────
+  db_test:
+    image: postgres:16-alpine
+    container_name: easc_db_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: easc_user
+      POSTGRES_PASSWORD: easc_password
+      POSTGRES_DB: easc_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - easc_pg_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easc_user -d easc_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  easc_pg_data:
+  easc_pg_test_data:

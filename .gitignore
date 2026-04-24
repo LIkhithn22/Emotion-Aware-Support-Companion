@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+packages/*/node_modules/
+
+# Build outputs
+packages/frontend/dist/
+packages/backend/dist/
+
+# Environment files
+.env
+.env.local
+packages/backend/.env
+packages/tests/.env
+
+# Prisma generated client
+packages/backend/node_modules/.prisma/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Test artifacts
+packages/tests/test-results/
+packages/tests/playwright-report/
+
+# TypeScript build info
+*.tsbuildinfo

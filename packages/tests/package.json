@@ -1,0 +1,34 @@
+{
+  "name": "@easc/tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Emotion-Aware Support Companion — Cucumber.js + Playwright acceptance tests",
+  "type": "commonjs",
+  "scripts": {
+    "test": "cucumber-js",
+    "test:uc01": "cucumber-js --tags @UC01",
+    "test:uc02": "cucumber-js --tags @UC02",
+    "test:uc03": "cucumber-js --tags @UC03",
+    "test:uc04": "cucumber-js --tags @UC04",
+    "test:uc05": "cucumber-js --tags @UC05",
+    "test:uc06": "cucumber-js --tags @UC06",
+    "test:uc07": "cucumber-js --tags @UC07",
+    "test:uc08": "cucumber-js --tags @UC08",
+    "test:uc09": "cucumber-js --tags @UC09",
+    "test:uc10": "cucumber-js --tags @UC10"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^10.8.0",
+    "@playwright/test": "^1.44.1",
+    "@types/node": "^20.14.0",
+    "playwright": "^1.44.1",
+    "prisma": "^5.14.0",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.2",
+    "tsx": "^4.15.7",
+    "typescript": "^5.4.5"
+  }
+}
