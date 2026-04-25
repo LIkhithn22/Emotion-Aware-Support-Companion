@@ -1,30 +1,31 @@
-# UC02 — SendMessageForAnalysis
-#
-# Feature file placeholder.
-# Gherkin scenarios will be generated here using Template 1 of the methodology.
-#
-# Actors:           User, EmotionAwareSupportCompanion
-# Boundary objects: ChatInterface
-# Entity objects:   Message, EmotionRecord, ConversationSession
-# Services:         EmotionAnalysisComponent (rule-based classifier)
-#
-# Quality requirements:
-#   - Message forwarded for analysis within 1 second
-#   - No truncation or modification of user text
-#
-# TODO: Replace this placeholder with Template 1 output for UC02.
-
 @UC02
 Feature: Send Message For Analysis
+  As a User engaged in a conversation
+  I want to send a message describing my feelings
+  So that the system can analyze my emotions and store the conversation
 
   Background:
-    Given there is an active conversation session for the User
-    And the chat interface is visible
+    Given the User has an active conversation session
+    And the User is viewing the chat interface
 
-  Scenario: UC02-S01 User sends a message for emotion analysis (placeholder)
-    Given the User is on the chat interface
-    When the User enters a message describing their feelings
-    And the User selects "Send"
-    Then the message is stored in the conversation history
-    And the EmotionAnalysisComponent is requested to analyse the message
-    # TODO: complete with Template 1 acceptance contract
+  Scenario: UC02-S01 User successfully sends a message
+    When the User types "I am feeling a bit overwhelmed today." in the message input
+    And the User clicks the Send button
+    Then the message appears in the chat thread
+    And the system saves the message to the database linked to the session
+    And the message is forwarded to the EmotionAnalysisComponent
+
+  Scenario: UC02-S02 User attempts to send an empty message
+    When the User clicks the Send button without typing
+    Then the message is not sent
+    And no new message is saved to the database
+
+  @performance
+  Scenario: UC02-S03 Message analysis request meets performance budget
+    When the User sends a valid message
+    Then the message must be received and forwarded for analysis within 1 second
+
+  @integrity
+  Scenario: UC02-S04 Message text is preserved without truncation
+    When the User sends a message containing special characters and emojis "Testing! @#% 😅"
+    Then the database must store the exact text "Testing! @#% 😅" without modification

@@ -8,12 +8,13 @@
  */
 import { apiClient } from './client';
 
-export async function sendMessage(_sessionId: number, _content: string) {
-  // UC02 — POST /api/v1/sessions/:id/messages
-  const res = await apiClient.post(`/sessions/${_sessionId}/messages`, {
-    content: _content,
-    senderType: 'USER',
+export async function sendMessage(sessionId: number, content: string) {
+  // UC02/UC03 — POST /api/v1/sessions/:id/messages
+  const res = await apiClient.post(`/sessions/${sessionId}/messages`, {
+    content,
+    senderRole: 'USER', // Match the backend requirement
   });
+  // Expecting an array: [userMessage, systemMessage]
   return res.data;
 }
 

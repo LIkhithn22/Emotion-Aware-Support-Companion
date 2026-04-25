@@ -67,9 +67,68 @@ router.put('/:id/close', (_req, res) => {
   res.status(501).json({ message: 'UC08 EndConversationSession — not yet implemented' });
 });
 
-// UC02 — Send a message for emotion analysis
-router.post('/:id/messages', (_req, res) => {
-  res.status(501).json({ message: 'UC02 SendMessageForAnalysis — not yet implemented' });
+import { analyzeEmotion, generateResponse, checkSafety, FALLBACK_MESSAGE } from '../services/emotionAnalysis';
+
+// UC02 & UC03 — Send a message and generate supportive response
+router.post('/:id/messages', async (req, res, next) => {
+  try {
+    const sessionId = Number(req.params.id);
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string' || content.trim() === '') {
+      return res.status(400).json({ error: 'Message content is required' });
+    }
+
+    // Validate session
+    const session = await prisma.conversationSession.findUnique({
+      where: { sessionId }
+    });
+
+    if (!session || session.status !== 'OPEN') {
+      return res.status(400).json({ error: 'Session is invalid or closed' });
+    }
+
+    // --- UC02: User Message & Emotion Analysis ---
+    const userMessage = await prisma.message.create({
+      data: {
+        sessionId,
+        content,
+        senderRole: 'USER'
+      }
+    });
+
+    const analysis = await analyzeEmotion(content);
+    
+    // Save EmotionRecord
+    await prisma.emotionRecord.create({
+      data: {
+        messageId: userMessage.messageId,
+        primaryEmotion: analysis.primaryEmotion,
+        confidence: analysis.confidence
+      }
+    });
+
+    // --- UC03: Generate Supportive Response ---
+    let systemText = await generateResponse(analysis.primaryEmotion);
+    const isSafe = await checkSafety(systemText, analysis.primaryEmotion);
+    
+    if (!isSafe) {
+      systemText = FALLBACK_MESSAGE;
+    }
+
+    const systemMessage = await prisma.message.create({
+      data: {
+        sessionId,
+        content: systemText,
+        senderRole: 'SYSTEM'
+      }
+    });
+
+    // Return both messages
+    res.status(201).json([userMessage, systemMessage]);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // UC09 — List messages in a session
