@@ -2,7 +2,7 @@
 
 > CISC 699 Capstone Project — Harrisburg University of Science and Technology
 
-A text-based conversational web application that recognises, interprets, and responds to users' emotional states while maintaining ethical guardrails, consent management, and privacy controls.
+An Emotion-Aware Support Companion is a text-based system that detects users' emotions from language and context, then provides transparent, supportive, and ethically constrained responses without making clinical claims.
 
 ---
 
